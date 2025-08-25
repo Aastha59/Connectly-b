@@ -1243,6 +1243,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import base64
 import os
+import uvicorn
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -1484,3 +1485,8 @@ async def send_email_with_attachment_oauth(
             failed += 1
 
     return {"message": f"Emails sent: {sent}, failed: {failed}", "sent": sent, "failed": failed}
+
+if __name__ == "__main__":
+    import uvicorn, os
+    port = int(os.environ.get("PORT", 8000))  # Render gives PORT, fallback to 8000 locally
+    uvicorn.run("main:app", host="0.0.0.0", port=port)
