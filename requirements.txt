@@ -24,6 +24,5 @@ google-auth-oauthlib
 # npm install
 # npm start
 
-   │                                                  │
-#    │   - Local:    http://localhost:63281             │
+#    │   - Local:    http://localhost:63281             
 #    │   - Network:  http://192.168.12.1:63281
