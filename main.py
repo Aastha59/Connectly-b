@@ -44,7 +44,7 @@ def serp_search(query):
         "q": query,
         "api_key": SERP_API_KEY,
         "hl": "en",
-        "num": "1000"
+        "num": "10"
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
@@ -81,12 +81,12 @@ def search_contacts(req: SearchRequest):
             if c not in results:
                 results.append(c)
                 count += 1
-                if count >= 1000:
+                if count >= 10:
                     break
-        if count >= 1000:
+        if count >= 10:
             break
 
-    contacts_to_return = results[:1000]
+    contacts_to_return = results[:10]
     print("Extracted contacts:", contacts_to_return)
     return {"contacts": contacts_to_return}
 
