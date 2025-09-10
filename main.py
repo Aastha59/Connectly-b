@@ -24,7 +24,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://connectly-f-r9k1.vercel.app", "https://www.connectlyai.in", "https://connectlyai.in"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://connectly-f-r9k1.vercel.app", "https://www.connectlyai.in", "https://connectlyai.in", "https://connectlyai.in/"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
