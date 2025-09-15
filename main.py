@@ -1,3 +1,4 @@
+from datetime import datetime
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -16,6 +17,16 @@ import os
 import uvicorn
 from dotenv import load_dotenv
 
+import motor.motor_asyncio
+load_dotenv()
+
+MONGODB_URL = os.getenv("MONGODB_URL")  # Your MongoDB connection string in .env
+
+client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
+db = client.connectly_db   # choose your DB name
+email_collection = db.connectly_collection     # choose your collection name
+
+
 load_dotenv()
 
 SERP_API_KEY = os.getenv("SERP_API_KEY")
@@ -28,6 +39,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    
 )
 
 class SearchRequest(BaseModel):
@@ -35,7 +47,6 @@ class SearchRequest(BaseModel):
     country: str
     profile: str
     contact_type: str 
-
 
 def serp_search(query):
     url = "https://serpapi.com/search"
@@ -145,58 +156,6 @@ Best regards,
     ]
     return {"templates": templates}
 
-# @app.post("/api/send_email_with_attachment_oauth")
-# async def send_email_with_attachment_oauth(
-#     emails: str = Form(...),
-#     subject: str = Form(...),
-#     body: str = Form(...),
-#     sender_email: str = Form(...),
-#     gmail_token: str = Form(...),
-#     attachment: Optional[UploadFile] = File(None),
-# ):
-#     email_list = [e.strip() for e in emails.split(",") if e.strip()]
-#     sent = 0
-#     failed = 0
-
-#     attachment_content = None
-#     attachment_filename = None
-
-#     if attachment:
-#         attachment_content = await attachment.read()
-#         attachment_filename = attachment.filename
-
-#     for recipient in email_list:
-#         try:
-#             msg = MIMEMultipart()
-#             msg["From"] = sender_email
-#             msg["To"] = recipient
-#             msg["Subject"] = subject
-#             msg.attach(MIMEText(body, "plain"))
-
-#             if attachment and attachment_content:
-#                 part = MIMEBase("application", "octet-stream")
-#                 part.set_payload(attachment_content)
-#                 encoders.encode_base64(part)
-#                 part.add_header("Content-Disposition", f'attachment; filename="{attachment_filename}"')
-#                 msg.attach(part)
-
-#             raw_message = base64.urlsafe_b64encode(msg.as_bytes()).decode()
-#             creds = Credentials(gmail_token)
-#             service = build("gmail", "v1", credentials=creds)
-#             message = service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
-
-#             print(f"Email sent to {recipient}, message ID: {message['id']}")
-#             sent += 1
-
-#         except HttpError as error:
-#             print(f"An error occurred sending to {recipient}: {error}")
-#             failed += 1
-#         except Exception as e:
-#             print(f"Unexpected error with {recipient}: {str(e)}")
-#             failed += 1
-
-#     return {"message": f"Emails sent: {sent}, failed: {failed}", "sent": sent, "failed": failed}
-
 @app.post("/api/send_email_with_attachment_oauth")
 async def send_email_with_attachment_oauth(
     emails: str = Form(...),
@@ -209,6 +168,12 @@ async def send_email_with_attachment_oauth(
     email_list = [e.strip() for e in emails.split(",") if e.strip()]
     sent = 0
     failed = 0
+
+    # Store sender_email in MongoDB
+    try:
+        await email_collection.insert_one({"sender_email": sender_email, "sent_at": datetime.utcnow()})
+    except Exception as e:
+        print(f"Error saving sender_email to DB: {str(e)}")
 
     attachment_content = None
     attachment_filename = None
