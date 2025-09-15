@@ -23,8 +23,8 @@ load_dotenv()
 MONGODB_URL = os.getenv("MONGODB_URL")  # Your MongoDB connection string in .env
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db = client.connectly_db   # choose your DB name
-email_collection = db.connectly_collection     # choose your collection name
+db = client.connectly_db           # database named "connectly_db"
+email_collection = db.connectly_collection  # collection named "connectly_collection"
 
 
 load_dotenv()
