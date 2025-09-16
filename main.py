@@ -67,6 +67,40 @@ def serp_search(query):
 def read_root():
     return {"status": "Backend is running!"}
 
+# @app.post("/api/search")
+# def search_contacts(req: SearchRequest):
+#     profile_map = {
+#         "linkedin": "linkedin.com",
+#         "instagram": "instagram.com",
+#         "youtube": "youtube.com"
+#     }
+#     profile_site = profile_map.get(req.profile.lower(), "linkedin.com")
+#     qry = f'site:{profile_site} "{req.role}" "{req.country}"'
+#     if req.contact_type.lower() == 'gmail':
+#         qry += ' "@gmail.com"'
+#     if req.contact_type.lower() == 'mobile':
+#         qry += ' "contact number"'
+
+#     data = serp_search(qry)
+#     results = []
+#     count = 0
+
+#     for result in data.get("organic_results", []):
+#         snippet = result.get("snippet", "")
+#         contacts = extract_contacts(snippet, req.contact_type)
+#         for c in contacts:
+#             if c not in results:
+#                 results.append(c)
+#                 count += 1
+#                 if count >= 50:
+#                     break
+#         if count >= 50:
+#             break
+
+#     contacts_to_return = results[:50]
+#     print("Extracted contacts:", contacts_to_return)
+#     return {"contacts": contacts_to_return}
+
 @app.post("/api/search")
 def search_contacts(req: SearchRequest):
     profile_map = {
@@ -75,31 +109,62 @@ def search_contacts(req: SearchRequest):
         "youtube": "youtube.com"
     }
     profile_site = profile_map.get(req.profile.lower(), "linkedin.com")
+    
+    # More robust query construction
     qry = f'site:{profile_site} "{req.role}" "{req.country}"'
     if req.contact_type.lower() == 'gmail':
-        qry += ' "@gmail.com"'
+        qry += ' ("@gmail.com" OR "gmail.com")'
     if req.contact_type.lower() == 'mobile':
-        qry += ' "contact number"'
+        qry += ' ("contact number" OR "phone" OR "mobile")'
 
-    data = serp_search(qry)
     results = []
+    seen = set()
     count = 0
+    start = 0
 
-    for result in data.get("organic_results", []):
-        snippet = result.get("snippet", "")
-        contacts = extract_contacts(snippet, req.contact_type)
-        for c in contacts:
-            if c not in results:
-                results.append(c)
-                count += 1
-                if count >= 50:
-                    break
-        if count >= 50:
+    # Paginate through multiple SERP pages to get more data
+    while count < 50 and start < 100:  # limit to first 100 results (safety)
+        params = {
+            "engine": "google",
+            "q": qry,
+            "api_key": SERP_API_KEY,
+            "hl": "en",
+            "num": "20",  # fetch 20 per page
+            "start": start
+        }
+        resp = requests.get("https://serpapi.com/search", params=params)
+        if resp.status_code != 200:
+            print(f"SerpAPI error {resp.status_code}: {resp.text}")
             break
+        
+        data = resp.json()
+        organic_results = data.get("organic_results", [])
+        if not organic_results:
+            break  # no more results
 
-    contacts_to_return = results[:50]
-    print("Extracted contacts:", contacts_to_return)
-    return {"contacts": contacts_to_return}
+        for result in organic_results:
+            snippet = result.get("snippet", "")
+            title = result.get("title", "")
+            link = result.get("link", "")
+
+            text_to_parse = f"{title}\n{snippet}\n{link}"
+            contacts = extract_contacts(text_to_parse, req.contact_type)
+
+            for c in contacts:
+                if c not in seen:
+                    results.append(c)
+                    seen.add(c)
+                    count += 1
+                    if count >= 50:
+                        break
+            if count >= 50:
+                break
+
+        start += 20  # next page
+    
+    print(f"Extracted {len(results)} contacts:", results)
+    return {"contacts": results}
+
 
 
 @app.post("/api/templates")
