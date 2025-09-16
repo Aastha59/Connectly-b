@@ -35,7 +35,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://connectly-f-r9k1.vercel.app", "https://www.connectlyai.in", "https://connectlyai.in", "https://connectlyai.in/"],
+    allow_origins=["http://localhost:3000", "http://localhost:3001", "https://connectly-f-r9k1.vercel.app", "https://www.connectlyai.in", "https://connectlyai.in", "https://connectlyai.in/", "connectlyai.in"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -55,7 +55,7 @@ def serp_search(query):
         "q": query,
         "api_key": SERP_API_KEY,
         "hl": "en",
-        "num": "20"
+        "num": "50"
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
@@ -92,12 +92,12 @@ def search_contacts(req: SearchRequest):
             if c not in results:
                 results.append(c)
                 count += 1
-                if count >= 20:
+                if count >= 50:
                     break
-        if count >= 20:
+        if count >= 50:
             break
 
-    contacts_to_return = results[:20]
+    contacts_to_return = results[:50]
     print("Extracted contacts:", contacts_to_return)
     return {"contacts": contacts_to_return}
 
