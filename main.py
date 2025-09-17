@@ -123,7 +123,7 @@ def search_contacts(req: SearchRequest):
     start = 0
 
     # Paginate through multiple SERP pages to get more data
-    while count < 50 and start < 100:  # limit to first 100 results (safety)
+    while count < 20 and start < 40:  # limit to first 40 results (safety)
         params = {
             "engine": "google",
             "q": qry,
@@ -155,12 +155,12 @@ def search_contacts(req: SearchRequest):
                     results.append(c)
                     seen.add(c)
                     count += 1
-                    if count >= 50:
+                    if count >= 25:
                         break
-            if count >= 50:
+            if count >= 25:
                 break
 
-        start += 20  # next page
+        start += 5  # next page
     
     print(f"Extracted {len(results)} contacts:", results)
     return {"contacts": results}
