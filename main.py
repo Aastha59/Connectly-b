@@ -55,7 +55,7 @@ def serp_search(query):
         "q": query,
         "api_key": SERP_API_KEY,
         "hl": "en",
-        "num": "50"
+        "num": "30"
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
@@ -129,7 +129,7 @@ def search_contacts(req: SearchRequest):
             "q": qry,
             "api_key": SERP_API_KEY,
             "hl": "en",
-            "num": "20",  # fetch 20 per page
+            "num": "15",  # fetch 15 per page
             "start": start
         }
         resp = requests.get("https://serpapi.com/search", params=params)
@@ -155,9 +155,9 @@ def search_contacts(req: SearchRequest):
                     results.append(c)
                     seen.add(c)
                     count += 1
-                    if count >= 25:
+                    if count >= 20:
                         break
-            if count >= 25:
+            if count >= 20:
                 break
 
         start += 5  # next page
