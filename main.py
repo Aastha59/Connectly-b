@@ -55,7 +55,7 @@ def serp_search(query):
         "q": query,
         "api_key": SERP_API_KEY,
         "hl": "en",
-        "num": "20"
+        "num": "6"
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
@@ -123,7 +123,7 @@ def search_contacts(req: SearchRequest):
     start = 0
 
     # Paginate through multiple SERP pages to get more data
-    while count < 20 and start < 30:  # limit to first 30 results (safety)
+    while count < 7 and start < 30:  # limit to first 30 results (safety)
         params = {
             "engine": "google",
             "q": qry,
@@ -155,9 +155,9 @@ def search_contacts(req: SearchRequest):
                     results.append(c)
                     seen.add(c)
                     count += 1
-                    if count >= 20:
+                    if count >= 7:
                         break
-            if count >= 20:
+            if count >= 7:
                 break
 
         start += 5  # next page
