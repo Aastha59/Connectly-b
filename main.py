@@ -48,21 +48,38 @@ class SearchRequest(BaseModel):
     profile: str
     contact_type: str 
 
-def serp_search(query):
-    # url = "https://serpapi.com/search"
+# def serp_search(query):
+#     # url = "https://serpapi.com/search"
+#     url = "https://www.googleapis.com/customsearch/v1"
+#     params = {
+#         "engine": "google",
+#         "q": query,
+#         "api_key": GOOGLE_CUSTOM_SEARCH_API,
+#         "hl": "en",
+#         "num": "6"
+#     }
+#     resp = requests.get(url, params=params)
+#     if resp.status_code != 200:
+#         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
+#         resp.raise_for_status()
+#     return resp.json()
+
+def serp_search(query, start=0):
     url = "https://www.googleapis.com/customsearch/v1"
     params = {
-        "engine": "google",
         "q": query,
-        "api_key": GOOGLE_CUSTOM_SEARCH_API,
+        "key": GOOGLE_CUSTOM_SEARCH_API,   # ✅ correct param name
+        "cx": os.getenv("GOOGLE_CSE_ID"),  # ✅ add your Search Engine ID
         "hl": "en",
-        "num": "6"
+        "num": 5,
+        "start": start + 1                 # Google’s "start" is 1-based
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
         resp.raise_for_status()
     return resp.json()
+
 
 @app.get("/")
 def read_root():
@@ -138,19 +155,42 @@ def search_contacts(req: SearchRequest):
             print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
             break
         
-        data = resp.json()
-        organic_results = data.get("organic_results", [])
-        if not organic_results:
-            break  # no more results
+        # data = resp.json()
+        # organic_results = data.get("organic_results", [])
+        # if not organic_results:
+        #     break  # no more results
 
-        for result in organic_results:
+        # for result in organic_results:
+        #     snippet = result.get("snippet", "")
+        #     title = result.get("title", "")
+        #     link = result.get("link", "")
+
+        #     text_to_parse = f"{title}\n{snippet}\n{link}"
+        #     contacts = extract_contacts(text_to_parse, req.contact_type)
+
+        #     for c in contacts:
+        #         if c not in seen:
+        #             results.append(c)
+        #             seen.add(c)
+        #             count += 1
+        #             if count >= 7:
+        #                 break
+        #     if count >= 7:
+        #         break
+
+        data = serp_search(qry, start)   # use our helper function
+        items = data.get("items", [])
+        if not items:
+            break  # no more results
+        
+        for result in items:
             snippet = result.get("snippet", "")
             title = result.get("title", "")
             link = result.get("link", "")
-
+        
             text_to_parse = f"{title}\n{snippet}\n{link}"
             contacts = extract_contacts(text_to_parse, req.contact_type)
-
+        
             for c in contacts:
                 if c not in seen:
                     results.append(c)
