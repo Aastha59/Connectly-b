@@ -29,7 +29,7 @@ email_collection = db.connectly_collection  # collection named "connectly_collec
 
 load_dotenv()
 
-SERP_API_KEY = os.getenv("SERP_API_KEY")
+GOOGLE_CUSTOM_SEARCH_API = os.getenv("GOOGLE_CUSTOM_SEARCH_API")
 
 app = FastAPI()
 
@@ -49,17 +49,18 @@ class SearchRequest(BaseModel):
     contact_type: str 
 
 def serp_search(query):
-    url = "https://serpapi.com/search"
+    # url = "https://serpapi.com/search"
+    url = "https://www.googleapis.com/customsearch/v1"
     params = {
         "engine": "google",
         "q": query,
-        "api_key": SERP_API_KEY,
+        "api_key": GOOGLE_CUSTOM_SEARCH_API,
         "hl": "en",
         "num": "6"
     }
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
-        print(f"SerpAPI error {resp.status_code}: {resp.text}")
+        print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
         resp.raise_for_status()
     return resp.json()
 
@@ -127,14 +128,14 @@ def search_contacts(req: SearchRequest):
         params = {
             "engine": "google",
             "q": qry,
-            "api_key": SERP_API_KEY,
+            "api_key": GOOGLE_CUSTOM_SEARCH_API,
             "hl": "en",
             "num": "5",  # fetch 5 per page
             "start": start
         }
-        resp = requests.get("https://serpapi.com/search", params=params)
+        resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
         if resp.status_code != 200:
-            print(f"SerpAPI error {resp.status_code}: {resp.text}")
+            print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
             break
         
         data = resp.json()
