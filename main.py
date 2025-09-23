@@ -123,7 +123,7 @@ def search_contacts(req: SearchRequest):
     count = 0
     start = 0
 
-    # Paginate through multiple SERP pages to get more data
+    # Paginate through multiple Google custom pages to get more data
     while count < 7 and start < 30:  # limit to first 30 results (safety)
         params = {
             "engine": "google",
