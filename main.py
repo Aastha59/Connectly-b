@@ -66,14 +66,22 @@ class SearchRequest(BaseModel):
 
 def serp_search(query, start=0):
     url = "https://www.googleapis.com/customsearch/v1"
+    # params = {
+    #     "q": query,
+    #     "key": GOOGLE_CUSTOM_SEARCH_API,   # ✅ correct param name
+    #     "cx": os.getenv("GOOGLE_CSE_ID"),  # ✅ add your Search Engine ID
+    #     "hl": "en",
+    #     "num": 5,
+    #     "start": start + 1                 # Google’s "start" is 1-based
+    # }
     params = {
-        "q": query,
-        "key": GOOGLE_CUSTOM_SEARCH_API,   # ✅ correct param name
-        "cx": os.getenv("GOOGLE_CSE_ID"),  # ✅ add your Search Engine ID
-        "hl": "en",
-        "num": 5,
-        "start": start + 1                 # Google’s "start" is 1-based
+    "q": query,
+    "key": GOOGLE_CUSTOM_SEARCH_API,      # ✅ correct
+    "cx": os.getenv("GOOGLE_CSE_ID"),     # ✅ required (your CSE ID)
+    "num": 5,
+    "start": start + 1                    # Google is 1-based
     }
+
     resp = requests.get(url, params=params)
     if resp.status_code != 200:
         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
@@ -141,56 +149,82 @@ def search_contacts(req: SearchRequest):
     start = 0
 
     # Paginate through multiple Google custom pages to get more data
-    while count < 7 and start < 30:  # limit to first 30 results (safety)
-        params = {
-            "engine": "google",
-            "q": qry,
-            "api_key": GOOGLE_CUSTOM_SEARCH_API,
-            "hl": "en",
-            "num": "5",  # fetch 5 per page
-            "start": start
-        }
-        resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
-        if resp.status_code != 200:
-            print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
-            break
+    # while count < 7 and start < 30:  # limit to first 30 results (safety)
+    #     params = {
+    #         "engine": "google",
+    #         "q": qry,
+    #         "api_key": GOOGLE_CUSTOM_SEARCH_API,
+    #         "hl": "en",
+    #         "num": "5",  # fetch 5 per page
+    #         "start": start
+    #     }
+    #     resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
+    #     if resp.status_code != 200:
+    #         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
+    #         break
         
-        # data = resp.json()
-        # organic_results = data.get("organic_results", [])
-        # if not organic_results:
-        #     break  # no more results
+    #     # data = resp.json()
+    #     # organic_results = data.get("organic_results", [])
+    #     # if not organic_results:
+    #     #     break  # no more results
 
-        # for result in organic_results:
-        #     snippet = result.get("snippet", "")
-        #     title = result.get("title", "")
-        #     link = result.get("link", "")
+    #     # for result in organic_results:
+    #     #     snippet = result.get("snippet", "")
+    #     #     title = result.get("title", "")
+    #     #     link = result.get("link", "")
 
-        #     text_to_parse = f"{title}\n{snippet}\n{link}"
-        #     contacts = extract_contacts(text_to_parse, req.contact_type)
+    #     #     text_to_parse = f"{title}\n{snippet}\n{link}"
+    #     #     contacts = extract_contacts(text_to_parse, req.contact_type)
 
-        #     for c in contacts:
-        #         if c not in seen:
-        #             results.append(c)
-        #             seen.add(c)
-        #             count += 1
-        #             if count >= 7:
-        #                 break
-        #     if count >= 7:
-        #         break
+    #     #     for c in contacts:
+    #     #         if c not in seen:
+    #     #             results.append(c)
+    #     #             seen.add(c)
+    #     #             count += 1
+    #     #             if count >= 7:
+    #     #                 break
+    #     #     if count >= 7:
+    #     #         break
 
-        data = serp_search(qry, start)   # use our helper function
+    #     data = serp_search(qry, start)   # use our helper function
+    #     items = data.get("items", [])
+    #     if not items:
+    #         break  # no more results
+        
+    #     for result in items:
+    #         snippet = result.get("snippet", "")
+    #         title = result.get("title", "")
+    #         link = result.get("link", "")
+        
+    #         text_to_parse = f"{title}\n{snippet}\n{link}"
+    #         contacts = extract_contacts(text_to_parse, req.contact_type)
+        
+    #         for c in contacts:
+    #             if c not in seen:
+    #                 results.append(c)
+    #                 seen.add(c)
+    #                 count += 1
+    #                 if count >= 7:
+    #                     break
+    #         if count >= 7:
+    #             break
+
+    #     start += 5  # next page
+    
+    while count < 7 and start < 30:
+        data = serp_search(qry, start)
         items = data.get("items", [])
         if not items:
-            break  # no more results
-        
+            break
+    
         for result in items:
             snippet = result.get("snippet", "")
             title = result.get("title", "")
             link = result.get("link", "")
-        
+    
             text_to_parse = f"{title}\n{snippet}\n{link}"
             contacts = extract_contacts(text_to_parse, req.contact_type)
-        
+    
             for c in contacts:
                 if c not in seen:
                     results.append(c)
@@ -200,8 +234,9 @@ def search_contacts(req: SearchRequest):
                         break
             if count >= 7:
                 break
-
-        start += 5  # next page
+    
+        start += 5
+    
     
     print(f"Extracted {len(results)} contacts:", results)
     return {"contacts": results}
