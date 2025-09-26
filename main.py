@@ -1,6 +1,7 @@
 from datetime import datetime
 from fastapi import FastAPI, Form, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from typing import List, Optional
 from utils import extract_contacts
@@ -26,8 +27,6 @@ client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
 db = client.connectly_db           # database named "connectly_db"
 email_collection = db.connectly_collection  # collection named "connectly_collection"
 
-
-load_dotenv()
 
 GOOGLE_CUSTOM_SEARCH_API = os.getenv("GOOGLE_CUSTOM_SEARCH_API")
 
@@ -129,118 +128,124 @@ def read_root():
 
 @app.post("/api/search")
 def search_contacts(req: SearchRequest):
-    profile_map = {
-        "linkedin": "linkedin.com",
-        "instagram": "instagram.com",
-        "youtube": "youtube.com"
-    }
-    profile_site = profile_map.get(req.profile.lower(), "linkedin.com")
-    
-    # More robust query construction
-    qry = f'site:{profile_site} "{req.role}" "{req.country}"'
-    if req.contact_type.lower() == 'gmail':
-        qry += ' ("@gmail.com" OR "gmail.com")'
-    if req.contact_type.lower() == 'mobile':
-        qry += ' ("contact number" OR "phone" OR "mobile")'
-
-    results = []
-    seen = set()
-    count = 0
-    start = 0
-
-    # Paginate through multiple Google custom pages to get more data
-    # while count < 7 and start < 30:  # limit to first 30 results (safety)
-    #     params = {
-    #         "engine": "google",
-    #         "q": qry,
-    #         "api_key": GOOGLE_CUSTOM_SEARCH_API,
-    #         "hl": "en",
-    #         "num": "5",  # fetch 5 per page
-    #         "start": start
-    #     }
-    #     resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
-    #     if resp.status_code != 200:
-    #         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
-    #         break
+    try:
+        profile_map = {
+            "linkedin": "linkedin.com",
+            "instagram": "instagram.com",
+            "youtube": "youtube.com"
+        }
+        profile_site = profile_map.get(req.profile.lower(), "linkedin.com")
         
-    #     # data = resp.json()
-    #     # organic_results = data.get("organic_results", [])
-    #     # if not organic_results:
-    #     #     break  # no more results
-
-    #     # for result in organic_results:
-    #     #     snippet = result.get("snippet", "")
-    #     #     title = result.get("title", "")
-    #     #     link = result.get("link", "")
-
-    #     #     text_to_parse = f"{title}\n{snippet}\n{link}"
-    #     #     contacts = extract_contacts(text_to_parse, req.contact_type)
-
-    #     #     for c in contacts:
-    #     #         if c not in seen:
-    #     #             results.append(c)
-    #     #             seen.add(c)
-    #     #             count += 1
-    #     #             if count >= 7:
-    #     #                 break
-    #     #     if count >= 7:
-    #     #         break
-
-    #     data = serp_search(qry, start)   # use our helper function
-    #     items = data.get("items", [])
-    #     if not items:
-    #         break  # no more results
+        # More robust query construction
+        qry = f'site:{profile_site} "{req.role}" "{req.country}"'
+        if req.contact_type.lower() == 'gmail':
+            qry += ' ("@gmail.com" OR "gmail.com")'
+        if req.contact_type.lower() == 'mobile':
+            qry += ' ("contact number" OR "phone" OR "mobile")'
+    
+        results = []
+        seen = set()
+        count = 0
+        start = 0
+    
+        # Paginate through multiple Google custom pages to get more data
+        # while count < 7 and start < 30:  # limit to first 30 results (safety)
+        #     params = {
+        #         "engine": "google",
+        #         "q": qry,
+        #         "api_key": GOOGLE_CUSTOM_SEARCH_API,
+        #         "hl": "en",
+        #         "num": "5",  # fetch 5 per page
+        #         "start": start
+        #     }
+        #     resp = requests.get("https://www.googleapis.com/customsearch/v1", params=params)
+        #     if resp.status_code != 200:
+        #         print(f"Google Custom Search API error {resp.status_code}: {resp.text}")
+        #         break
+            
+        #     # data = resp.json()
+        #     # organic_results = data.get("organic_results", [])
+        #     # if not organic_results:
+        #     #     break  # no more results
+    
+        #     # for result in organic_results:
+        #     #     snippet = result.get("snippet", "")
+        #     #     title = result.get("title", "")
+        #     #     link = result.get("link", "")
+    
+        #     #     text_to_parse = f"{title}\n{snippet}\n{link}"
+        #     #     contacts = extract_contacts(text_to_parse, req.contact_type)
+    
+        #     #     for c in contacts:
+        #     #         if c not in seen:
+        #     #             results.append(c)
+        #     #             seen.add(c)
+        #     #             count += 1
+        #     #             if count >= 7:
+        #     #                 break
+        #     #     if count >= 7:
+        #     #         break
+    
+        #     data = serp_search(qry, start)   # use our helper function
+        #     items = data.get("items", [])
+        #     if not items:
+        #         break  # no more results
+            
+        #     for result in items:
+        #         snippet = result.get("snippet", "")
+        #         title = result.get("title", "")
+        #         link = result.get("link", "")
+            
+        #         text_to_parse = f"{title}\n{snippet}\n{link}"
+        #         contacts = extract_contacts(text_to_parse, req.contact_type)
+            
+        #         for c in contacts:
+        #             if c not in seen:
+        #                 results.append(c)
+        #                 seen.add(c)
+        #                 count += 1
+        #                 if count >= 7:
+        #                     break
+        #         if count >= 7:
+        #             break
+    
+        #     start += 5  # next page
         
-    #     for result in items:
-    #         snippet = result.get("snippet", "")
-    #         title = result.get("title", "")
-    #         link = result.get("link", "")
-        
-    #         text_to_parse = f"{title}\n{snippet}\n{link}"
-    #         contacts = extract_contacts(text_to_parse, req.contact_type)
-        
-    #         for c in contacts:
-    #             if c not in seen:
-    #                 results.append(c)
-    #                 seen.add(c)
-    #                 count += 1
-    #                 if count >= 7:
-    #                     break
-    #         if count >= 7:
-    #             break
-
-    #     start += 5  # next page
-    
-    while count < 7 and start < 30:
-        data = serp_search(qry, start)
-        items = data.get("items", [])
-        if not items:
-            break
-    
-        for result in items:
-            snippet = result.get("snippet", "")
-            title = result.get("title", "")
-            link = result.get("link", "")
-    
-            text_to_parse = f"{title}\n{snippet}\n{link}"
-            contacts = extract_contacts(text_to_parse, req.contact_type)
-    
-            for c in contacts:
-                if c not in seen:
-                    results.append(c)
-                    seen.add(c)
-                    count += 1
-                    if count >= 7:
-                        break
-            if count >= 7:
+        while count < 7 and start < 30:
+            data = serp_search(qry, start)
+            items = data.get("items", [])
+            if not items:
                 break
+        
+            for result in items:
+                snippet = result.get("snippet", "")
+                title = result.get("title", "")
+                link = result.get("link", "")
+        
+                text_to_parse = f"{title}\n{snippet}\n{link}"
+                contacts = extract_contacts(text_to_parse, req.contact_type)
+        
+                for c in contacts:
+                    if c not in seen:
+                        results.append(c)
+                        seen.add(c)
+                        count += 1
+                        if count >= 7:
+                            break
+                if count >= 7:
+                    break
+        
+            start += 5
+        
     
-        start += 5
-    
-    
-    print(f"Extracted {len(results)} contacts:", results)
-    return {"contacts": results}
-
+        print(f"Extracted {len(results)} contacts:", results)
+        return {"contacts": results}
+    except Exception as e:
+        print(f"❌ Backend error in /api/search: {str(e)}")
+        return JSONResponse(
+            status_code=500,
+            content={"error": "Internal Server Error", "detail": str(e)}
+        )
 
 
 @app.post("/api/templates")
@@ -312,7 +317,7 @@ async def send_email_with_attachment_oauth(
 
     # Store sender_email in MongoDB
     try:
-        await email_collection.insert_one({"sender_email": sender_email, "sent_at": datetime.utcnow()})
+        await email_collection.insert_one({"sender_email": sender_email})
     except Exception as e:
         print(f"Error saving sender_email to DB: {str(e)}")
 
