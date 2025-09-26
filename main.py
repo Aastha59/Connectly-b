@@ -212,7 +212,16 @@ def search_contacts(req: SearchRequest):
         #     start += 5  # next page
         
         while count < 7 and start < 30:
-            data = serp_search(qry, start)
+            try:
+                data = serp_search(qry, start)
+            except requests.exceptions.HTTPError as e:
+                if e.response.status_code == 429:
+                    return JSONResponse(
+                        status_code=429,
+                        content={"error": "Site is updating, Wait for sometime. Try again later."}
+                    )
+                else:
+                    raise e
             items = data.get("items", [])
             if not items:
                 break
