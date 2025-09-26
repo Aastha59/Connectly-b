@@ -15,6 +15,7 @@ from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 import base64
 import os
+import time
 import uvicorn
 from dotenv import load_dotenv
 
@@ -87,6 +88,19 @@ def serp_search(query, start=0):
         resp.raise_for_status()
     return resp.json()
 
+def serp_search_with_retry(query, start=0, retries=3, delay=2):
+    for attempt in range(retries):
+        try:
+            return serp_search(query, start)
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 429:
+                if attempt < retries - 1:
+                    time.sleep(delay)  # wait before retrying
+                    continue
+                else:
+                    raise e
+            else:
+                raise e
 
 @app.get("/")
 def read_root():
