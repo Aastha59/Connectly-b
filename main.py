@@ -230,12 +230,18 @@ def search_contacts(req: SearchRequest):
                 data = serp_search(qry, start)
             except requests.exceptions.HTTPError as e:
                 if e.response.status_code == 429:
-                    return JSONResponse(
-                        status_code=429,
-                        content={"error": "Site is updating, Wait for sometime. Try again later."}
-                    )
+                    try:
+                        data = serp_search_with_retry(qry, start, retries=3, delay=2)
+                    except requests.exceptions.HTTPError:
+                        return JSONResponse(
+                            status_code=429,
+                            content={"error": "Site is updating, Wait for sometime. Try again later."}
+                        )
                 else:
-                    raise e
+                    return JSONResponse(
+                        status_code=500,
+                        content={"error": "Internal Server Error", "detail": str(e)}
+                    )
             items = data.get("items", [])
             if not items:
                 break
