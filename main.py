@@ -23,11 +23,15 @@ import motor.motor_asyncio
 load_dotenv()
 
 MONGODB_URL = os.getenv("MONGODB_URL")  # Your MongoDB connection string in .env
+print("Mongo URL:", MONGODB_URL)
+
 
 client = motor.motor_asyncio.AsyncIOMotorClient(MONGODB_URL)
-db = client.connectly_db           # database named "connectly_db"
-email_collection = db.connectly_collection  # collection named "connectly_collection"
+# db = client.connectly_db           # database named "connectly_db"
+# email_collection = db.connectly_collection  # collection named "connectly_collection"
 
+db = client["connectly_db"]
+email_collection = db["connectly_collection"]
 
 GOOGLE_CUSTOM_SEARCH_API = os.getenv("GOOGLE_CUSTOM_SEARCH_API")
 
