@@ -348,7 +348,7 @@ async def send_email_with_attachment_oauth(
     sent = 0
     failed = 0
 
-    # Store sender_email in MongoDB
+    # Store sender_email in mongodb
     try:
         await email_collection.insert_one({"sender_email": sender_email})
     except Exception as e:
